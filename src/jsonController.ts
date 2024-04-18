@@ -1,6 +1,6 @@
 /**
  * @fileoverview jsonController.ts - Controla las acciones sobre los Json que representan las cartas de Magic
-*/
+ */
 
 import * as fs from "fs";
 import { magicCard } from "./magiCard.js";
