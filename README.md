@@ -18,472 +18,302 @@
 ## Índice
 1. [Resumen](#resumen)
 2. [Apartados](#apartados)
-   - [Implementacion del server](#Implementacion-del-server)
-   - [Implementacion de las pruebas](#Implementacion-de-las-pruebas)
    - [Cambios en el controlador del JSON](#Cambios-en-el-controlador-del-JSON)
+   - [Implementacion del server](#Implementacion-del-server)
+   - [Pruebas con express](#Pruebas-con-request)
+   - [Modificacion](#Modificacion)
 3. [Problemas](#alternativas)
 4. [Referencias](#referencias)
 5. [Anexos](#anexos)
 
 ## Resumen
-En esta práctica, se nos ha pedido un programa en **TypeScript** destinado a la coleccion de cartas Magic, básicamente crear una especie de albúm de estas. 
+Seguimos trabajando con la app de las cartas magic, las funcionalidades son las mismas pero hay cambios significativos. En este caso toda la gestion de ficheros se hará mediante el uso de la api asícrona de node.js, utilizando el patrón de diseño callback para que las pruebas sean más sencillas de realizar.
 
-Algunas de las tareas previas requeridas fueron:
-
-- **Acepte la asignación** de GitHub Classroom asociada a esta práctica.
-- Aprenda a utilizar los paquetes **yargs y chalk**, aunque más abajo se ilustran ejemplos de uso.
-- Familiarícese con el **API síncrona proporcionada por Node.js para trabajar con el sistema de ficheros.**
-
-Los requisitos de la "app" que se nos exigían fueron:
-
-- Las cartas magic deben de tener una forma similiar a la descrita en el guión, con los atributos:
-
-  - ID.
-  - Nombre.
-  - Coste de maná.
-  - Color.
-  - Linea de tipo.
-  - Rareza.
-  - Texto de reglas.
-  - Fuerza/Resistencia.
-  - Marcas de lealtad.
-  - Valor de mercado.
-
-- Acciones que los usuarios podrán ejecutar sobre su colección de cartas:
-
-  - Añadir.
-  - Modificar.
-  - Eliminar.
-  - Listar.
-  - Mostrar.
-  - Modificar por campo (Añadida).
-
-- Guardaremos mediante un sistema de ficheros JSON las cartas magic del usuario hacinendo la aplicación persistente.
+Además creaemos una API para la gestión de las cartas mediante un servidor express, utilizando peticiones htttp para realizar las diferentes acciones posibles sobre la coleccion de los usuarios.
 
 > **[Volver al índice](#índice)**
 
 ## Apartados
-- ### Planteamiento del trabajo
+- ### Cambios en el controlador JSON
 
-El plateamiento inicial sin conocer el API síncrono para el trabajo con un sistema de ficheros, fue como en prácticas anteriores, una clase que implemente las caracteríticas de las cartas magic y otra clase que posee un array de estos objetos, con las diferentes funciones que se podrán hacer sobre él.
+Lo primero que hicimos fue empaparnos bien sobre los servidores express, la verdad es que en los apuntes de la asignatura se explica perfectamente su uso, además para realizar peticiones a nuestro server utilizaremos thunder-client, que es bastante intuitivo y facil de utilizar.
 
-Una vez comprendida la API, nos damos cuenta de que el array podrá ser la misma carpeta donde se guardan los ficheros JSON de cada magicCard. Para conseguir esto haremos un clase que implemente los métodos que cubren las funcionalidades que debe de tener el usuario, y gestionaremos los objetos mediante los diferentes archivos JSON.
+Para realizar las pruebas con mocha y chai vamos a usar request (Lo veremos posteriormente). Vamos a hablar rápidamente de los cambios que hemos introducido en el controlador del json.
+
+### Api Asíncrona.
 
 ```typescript
-/**
- * @fileoverview jsonController.ts - Controla las acciones sobre los Json que representan las cartas de Magic.
- */
-
-import * as fs from "fs";
-import { magicCard } from "./magiCard.js";
-import chalk from "chalk";
-
-const directorioUsuario = `./src/usuarios/${process.env.USER}`;
-
-/**
- * Clase jsonCards, implementa los métodos para añadir, eliminar, mostrar, modificar y mostrar todas las cartas de un usuario.
- */
-export class jsonCards {
-  /**
-   * @brief Constructor de la clase jsonCards.
-   * Se verifica si existe el directorio del usuario, si no existe se crea.
-   */
-  constructor() {
-    if (!fs.existsSync(directorioUsuario)) {
-      fs.mkdirSync(directorioUsuario);
-    }
-  }
-
-  /**
-   * @brief Añade una carta al directorio del usuario.
-   * @param card Carta a añadir.
-   */
-  add(card: magicCard) {
-    if (fs.existsSync(`${directorioUsuario}/${card.id_}.json`)) {
-      throw chalk.red(new Error(`Card already exists in ${process.env.USER}`));
-    }
-    fs.writeFileSync(
-      `${directorioUsuario}/${card.id_}.json`,
-      JSON.stringify(card),
-    );
-    console.log(chalk.green("Card added"));
-  }
-
-  /**
-   * @brief Elimina una carta del directorio del usuario.
-   * @param cardID ID de la carta a eliminar.
-   */
-  delete(cardID: number) {
-    if (fs.existsSync(`${directorioUsuario}/${cardID}.json`)) {
-      fs.unlinkSync(`${directorioUsuario}/${cardID}.json`);
-      console.log(chalk.green("Card deleted"));
-    }
-  }
-
-  /**
-   * @brief Muestra una carta del directorio del usuario.
-   * @param showIDCard ID de la carta a mostrar.
-   */
-  showCard(showIDCard: number) {
-    const filePath = `${directorioUsuario}/${showIDCard}.json`;
-    if (fs.existsSync(filePath)) {
-      console.log(chalk.green("Showing card"));
-      const cardData = fs.readFileSync(filePath, "utf-8");
-      const card = JSON.parse(cardData);
-      console.log(chalk.blue(`ID: ${showIDCard}`));
-      console.log(chalk.blue(`Name: ${card.name_}`));
-      console.log(chalk.blue(`Mana Cost: ${card.manaCost_}`));
-      console.log(chalk.blue(`Color: ${card.color_}`));
-      console.log(chalk.blue(`Type: ${card.type_}`));
-      console.log(chalk.blue(`Rare: ${card.rare_}`));
-      console.log(chalk.blue(`Rules: ${card.rules_}`));
-      console.log(chalk.blue(`Loyalty: ${card.loyalty_}`));
-      console.log(chalk.blue(`Value: ${card.value_}`));
-      if (card.strRes_) {
-        console.log(chalk.blue(`Strength/Resistance: ${card.strRes_}`));
-      }
-    } else {
-      throw new Error(chalk.red(`Card not found with ID ${showIDCard}`));
-    }
-  }
-
-  /**
-   * @brief Actualiza una carta del directorio del usuario, lo que quiere decir que la carta debe existir.
-   * @param card Carta a actualizar.
-   */
-  update(card: magicCard) {
-    if (fs.existsSync(`${directorioUsuario}/${card.id_}.json`)) {
-      fs.writeFileSync(
-        `${directorioUsuario}/${card.id_}.json`,
-        JSON.stringify(card),
-      );
-      console.log(chalk.green("Card updated"));
-    } else {
-      throw chalk.red(new Error(`Card not found in ${process.env.USER}`));
-    }
-  }
-
-  /**
-   * @breif Modifica una propiedad de una carta existente.
-   * @param cardID Id de la carta a modificar.
-   * @param valueToChange Campo a modificar.
-   * @param newValue Nuevo valor del campo.
-   * Se verifica que la carta exista y que el campo a modificar exista en la carta.
-   */
-  modify(cardID: number, valueToChange: string, newValue: string | number) {
-    if (fs.existsSync(`${directorioUsuario}/${cardID}.json`)) {
-      const card = fs.readFileSync(
-        `${directorioUsuario}/${cardID}.json`,
-        "utf-8",
-      );
-      const cardObj = JSON.parse(card);
-      if (cardObj[valueToChange] !== undefined) {
-        cardObj[valueToChange] = newValue;
-        fs.writeFileSync(
-          `${directorioUsuario}/${cardID}.json`,
-          JSON.stringify(cardObj),
-        );
-        console.log(chalk.green("Card modified"));
+  delete(user: string, cardID: number, callback: (err: string | undefined , data: string | undefined) => void ){
+    const filePath = `${directorioUsuario}/${user}/${cardID}.json`;
+    readFile(filePath, (err) => {
+      if (err){
+        callback('Card or user not found', undefined);
       } else {
-        throw chalk.red(new Error("Property not found in object magicCard"));
-      }
-    } else {
-      throw chalk.red(new Error(`Card not found in ${process.env.USER}`));
-    }
-  }
-
-  /**
-   * @brief Muestra todas las cartas del directorio del usuario.
-   * Se leen todos los archivos del directorio del usuario y se muestran.
-   */
-  showAllCards() {
-    const cards = fs.readdirSync(directorioUsuario);
-    const cardsArray: magicCard[] = [];
-    cards.forEach((card) => {
-      cardsArray.push(
-        JSON.parse(fs.readFileSync(`${directorioUsuario}/${card}`, "utf-8")),
-      );
-    });
-    console.log(chalk.green("Showing cards"));
-    cardsArray.forEach((card) => {
-      console.log(
-        chalk.blue(
-          "-----------------------------------------------------------------------------------------------------------------",
-        ),
-      );
-      console.log(chalk.blue(`ID: ${card.id_}`));
-      console.log(chalk.blue(`Name: ${card.name_}`));
-      console.log(chalk.blue(`Mana Cost: ${card.manaCost_}`));
-      console.log(chalk.blue(`Color: ${card.color_}`));
-      console.log(chalk.blue(`Type: ${card.typo_}`));
-      console.log(chalk.blue(`Rare: ${card.rare_}`));
-      console.log(chalk.blue(`Rules: ${card.rules_}`));
-      console.log(chalk.blue(`Loyalty: ${card.loyalty_}`));
-      console.log(chalk.blue(`Value: ${card.value_}`));
-      if (card.strRes_) {
-        console.log(chalk.blue(`Strength/Resistance: ${card.strRes_}`));
+        // eliminanndo directorio asincornamente
+        fs.unlink(filePath, () => {
+          callback(undefined, 'Card deleted');
+        });
       }
     });
   }
-}
-
 ```
-_El uso de **fs** y **chalk** lo explicaremos en apartados posteriores._
 
-> **[Volver al índice](#índice)**
+Utilizaremos la función `delete` como ejemplo, podemos ver que se utiliza la api asíncrona para leer el fichero y el patron callback tendra uno de los dos campos posibles a undefined y otro con información ya sean los datos o los posibles errores.
 
-- ### Uso de chalk
+  ### Devolución de JSON
 
-Usamos chalk para dar formato a la salida de errores y por consola en nuestro caso, el uso es simple.
+La función `showCard` y `ShowAllCards` deberán devolver los correspondientes JSONs para servir correctamente a las consultas de tipo `get` que se puedan llegar a realizar.
 
 ```typescript
-
-console.log(chalk.blue(`ID: ${card.id_}`));
-
-```
-
-> **[Volver al índice](#índice)**
-
-- ### Uso de fs
-
-Buscabamos tener una "aplicación" persistente, lo hemos conseguido mediante el uso de esta API.
-
-```typescript
-
-  constructor() {
-    if (!fs.existsSync(directorioUsuario)) {
-      fs.mkdirSync(directorioUsuario);
-    }
-  }
-
-```
-Vemos como en el constructor de la clase compobamos si el usuario tiene o no un directorio para almacenar sus cartas.
-
- - __fs.existsSync__ nos indicará si existe o no con un boleano.
- - __fs.mkdirSync__ crea los directorios necesarios.
-
- - En el guión se nos pide poner el nombre de usuario por comandos mediante yargs (Hablaremos sobre esto posteriormete), sin embargo he decidido implementar la creación de la siguiente manera:
-
- ```typescript
- const directorioUsuario = `./src/usuarios/${process.env.USER}`;
- ```
-
- Donde obtendremos el nombre del usuario que ejecuta el programa automáticamente.
-
- Siguiendo con los conceptos de fs, vamos a echar un vistazo a la función add.
-
- ```typescript
-   add(card: magicCard) {
-    if (fs.existsSync(`${directorioUsuario}/${card.id_}.json`)) {
-      throw chalk.red(new Error(`Card already exists in ${process.env.USER}`));
-    }
-    fs.writeFileSync(
-      `${directorioUsuario}/${card.id_}.json`,
-      JSON.stringify(card),
-    );
-    console.log(chalk.green("Card added"));
-  }
- ```
-
- - __fs.writeFileSync__ nos sirve para escribir en un archivo, deberemos pasar su ruta y lo que queremos escribir en el.
- - __JSON.stringfy(card)__ Coge un objeto y lo convierte en una cadena json.
-
- En la función delete, se utiliza `fs.unlinkSync(`${directorioUsuario}/${cardID}.json`);` para borrar el archivo seleccionado por el usuario.
-
- Por último, finalizando con este apartado veo necesario analizar la función propia modify.
-
- ```typescript
-   modify(cardID: number, valueToChange: string, newValue: string | number) {
-    if (fs.existsSync(`${directorioUsuario}/${cardID}.json`)) {
-      const card = fs.readFileSync(
-        `${directorioUsuario}/${cardID}.json`,
-        "utf-8",
-      );
-      const cardObj = JSON.parse(card);
-      if (cardObj[valueToChange] !== undefined) {
-        cardObj[valueToChange] = newValue;
-        fs.writeFileSync(
-          `${directorioUsuario}/${cardID}.json`,
-          JSON.stringify(cardObj),
-        );
-        console.log(chalk.green("Card modified"));
+  showAllCards(user: string, callback: (err: string | undefined , data: string[] | undefined ) => void){
+    const cardsArray: string[] = [];
+    const dirPath = `${directorioUsuario}/${user}`;
+    fs.readdir(dirPath, (err, files) => {
+      if (err){
+        callback('User not found', undefined);
       } else {
-        throw chalk.red(new Error("Property not found in object magicCard"));
+        files.forEach((file) => {
+          fs.readFile(`${dirPath}/${file}`, (err, file) => {
+            cardsArray.push(JSON.parse(file.toString()));
+            if (cardsArray.length === files.length) {
+              callback(undefined, cardsArray);
+            }
+
+          });
+        });    
       }
-    } else {
-      throw chalk.red(new Error(`Card not found in ${process.env.USER}`));
-    }
+    });
+    
   }
- ```
+```
+Vemos que cuando el vector de los JSON sea del mismo tamaño que le fichero del usuario el patrón callback lo devolverá.
 
- - __fs.readFileSync__ Devuleve el contenido de un fichero.
- - __JSON.parse__ Función opuesta a stringfy, convierte una cadena en un objeto.
+```typescript
+  showCard(user:string, showIDCard: number, callback: (
+    err: string | undefined , data: string | undefined ) => void) {
+    const filePath = `${directorioUsuario}/${user}/${showIDCard}.json`;
+    readFile(filePath, (err, data) =>{
+      if (err){
+        callback('Card or user not found', undefined);
+      } else if (data){
+        callback(undefined, data.toString());
+      }
+    });
+  }
+```
 
- Esta función la he añadido para probar el código y porque el usuario no siempre querrá editar la carta completa, entonces esta función te da la opción de hacerlo por campos.
-
+En el caso de `ShowCard` devolverá el json del usuario con el id establecido, si existe en la colección obviamente.
 
 > **[Volver al índice](#índice)**
 
-- ### Uso de yargs
+- ### Implementacion del server.
 
-El uso de esta biblioteca, nos permitirá pasar parámetros a funciones mediante la línea de comandos.
+A la hora de implementar el server se nos pide que utilicemos las peticiones http `get`, `post`, `patch` y `delete`, lo haremos de la siguiente manera:
+
+- __Peticiones get__
 
 ```typescript
-.command(
-    "add",
-    "Adds a card to the collection",
-    {
-      id: {
-        description: "Card ID",
-        type: "number",
-        demandOption: true,
-      },
-      name: {
-        description: "card name",
-        type: "string",
-        demandOption: true,
-      },
-      manaCost: {
-        description: "Mana cost",
-        type: "number",
-        demandOption: true,
-      },
-      color: {
-        description: "Color",
-        choices: Object.values(color),
-        demandOption: true,
-      },
-      type: {
-        description: "Type",
-        choices: Object.values(tipe),
-        demandOption: true,
-      },
-      rare: {
-        description: "Rare",
-        choices: Object.values(rare),
-        demandOption: true,
-      },
-      rules: {
-        description: "Rules",
-        type: "string",
-        demandOption: true,
-      },
-      loyalty: {
-        description: "Loyalty",
-        type: "number",
-        demandOption: true,
-      },
-      value: {
-        description: "Value",
-        type: "number",
-        demandOption: true,
-      },
-      strRes: {
-        description: "Strength/Resistance",
-        type: "number",
-      },
-    },
-    (argv) => {
-      if (isNaN(argv.id)) {
-        throw chalk.red(new Error("ID must be a number"));
+app.get("/cards", (req, res) => {
+  const user = new jsonCards();
+  if (req.query.user && !req.query.cardID) {
+    user.showAllCards(req.query.user.toString(),(error,data)=>{
+      if (error) {
+          console.log(chalk.red(error));
+          res.send(error);
+      } else if (data){
+        console.log(chalk.green('Showing cards'));
+        res.send(data);
       }
+    });
+  } else if (req.query.user && req.query.cardID) {
+    user.showCard(
+      req.query.user.toString(),
+      parseInt(req.query.cardID.toString()),(error,data)=>{
+        if (error) {
+          console.log(chalk.red(error));
+          res.send(error);
+        } else {
+          console.log(chalk.green('Showing card'));
+          res.send(data);
+        }
+      });
+    } else {
+      res.send(`"error": "Error user not valid"`);
+    }
+  });
+```
 
-      if (typeof argv.name !== "string") {
-        throw chalk.red(new Error("Name must be a string"));
-      }
+La ruta que utilizaremos sera `/cards`. Si en el link de la petición, en la query string especificamos un **id** de una carta se nos mostrará la misma en caso de que exista, si no hacemos esto, y solo ponemos el nombre del usuario se nos mostrarán todas las cartas de este.
 
-      if (isNaN(argv.manaCost)) {
-        throw chalk.red(new Error("Mana Cost must be a number"));
-      }
+-__Petición post__ 
 
-      if (!Object.values(color).includes(argv.color)) {
-        throw chalk.red(new Error("Color must be a valid color"));
-      }
+Esta petición añadirá cartas a la colección del usuario. Deberemos pasarle en la query el nombre del usuario y el id de la carta.
 
-      if (!Object.values(tipe).includes(argv.type)) {
-        throw chalk.red(new Error("Type must be a valid type"));
+```typescript
+app.post("/cards", express.json(), (req, res) => {
+  const user = new jsonCards();
+  if (req.query.user) {
+    if (!jsonRev(JSON.stringify(req.body)).error) {
+      const card: magicCard = new magicCard(
+        req.query.user.toString(),
+        req.body.id_,
+        req.body.name_,
+        req.body.manaCost_,
+        req.body.color_,
+        req.body.typo_,
+        req.body.rare_,
+        req.body.rules_,
+        req.body.value_,
+        req.body.strRes_,
+        req.body.loyalty_,
+      );
+      user.add(card, (err, data) => {
+        if (err) {
+          console.log(chalk.red(err));
+          res.send(err);
+        } else {
+          console.log(chalk.green(data));
+          res.send(data);
+        }
       }
+    );
+    } else {
+      res.send((jsonRev(JSON.stringify(req.body)).error));
+    }
+  } else {
+    res.send("User must be in query string");
+  }
+});
+```
 
-      if (!Object.values(rare).includes(argv.rare)) {
-        throw chalk.red(new Error("Rare must be a valid rare"));
-      }
+Tenemos que pasar en el cuerpo de la petición un json con la carta que desee añadir el usuario y la función `jsonRev` sirve para verificar si el lore de la carta es el correcto, si no nos devolverá un error.
 
-      if (typeof argv.rules !== "string") {
-        throw chalk.red(new Error("Rules must be a string"));
-      }
+- __Petición patch__
 
-      if (isNaN(argv.loyalty) && argv.type !== tipe.planeswalker) {
-        throw chalk.red(new Error("Loyalty must be a number"));
-      }
-      
-      if (isNaN(argv.value)) {
-        throw chalk.red(new Error("Value must be a number"));
-      }
+Esta petición es la más sencilla, básicamente hace lo mismo que una petición `post` pero el json a modificar debe existir anteriormente.
 
-      if (argv.strRes && isNaN(argv.strRes)) {
-        throw chalk.red(new Error("Strength/Resistance must be a number"));
-      }
-
-      if (argv.strRes && argv.type !== tipe.creature) {
-        throw chalk.red(
-          new Error("Strength/Resistance is only for Creature type"),
-        );
-      }
-
-      if (argv.type === tipe.creature && !argv.strRes) {
-        throw chalk.red(
-          new Error("Creature type must have Strength/Resistance"),
-        );
-      }
-
+```typescript
+app.patch("/cards", express.json(), (req, res) => {
+  const action = new jsonCards();
+  const card = req.query.cardID;
+  const user = req.query.user?.toString();
+  if (user && card) {
+    if (!jsonRev(JSON.stringify(req.body)).error) {
       const card = new magicCard(
-        argv.id,
-        argv.name,
-        argv.manaCost,
-        argv.color as color,
-        argv.type as tipe,
-        argv.rare as rare,
-        argv.rules,
-        argv.loyalty,
-        argv.value,
-        argv.strRes,
+        user,
+        req.body.id_,
+        req.body.name_,
+        req.body.manaCost_,
+        req.body.color_,
+        req.body.typo_,
+        req.body.rare_,
+        req.body.rules_,
+        req.body.value_,
+        req.body.strRes_,
+        req.body.loyalty_,
       );
-      const json = new jsonCards();
-      json.add(card);
-    },
-  )
-
+      action.update(card, (err, data) => {
+        if (err) {
+          console.log(chalk.red(err));
+          res.send(err);
+        } else {
+          console.log(chalk.green(data));
+          res.send(data);
+        }
+    });
+    } else {
+      res.send(jsonRev(JSON.stringify(req.body)));
+    }
+  } else {
+    res.send("Error user or ID not valid");
+  }
+});
 ```
-Aquí vemos la implementación del comando add, con los diferentes parámetros necesarios para crear una carta, sus correspondientes condiciones, como que una carta **solo puede tener resitencia/fuerza si es de tipo 'creature' o que solo puede tener lealtad si es de tipo 'planeswalker'**.
 
-> **[Volver al índice](#índice)**
-## Problemas
-__Nos surgen algunos problemas por la poca experiencia en el entorno y con las nombradas librerías, pese a la clara documentación de estas:__
+- __Petición delete__
 
-- __chalk__ Debemos de usar ESM en vez de commonJS, esto nos hizo tener problemas con la acción de coveralls, ya que intentabamos realizar las pruebas con nyc, como ya sabemos este moodulo no trabaja con ESM, hay que utilizar c8.
-
--__yargs__ El problema surge con las variables de tipo enum.
+La petición `delete` se encargará de borrar las cartas no deseadas por el usuario, para ello le pasaremos en la query el id y le nombre del usuario.
 
 ```typescript
-      type: {
-        description: "Type",
-        choices: Object.values(tipe),
-        demandOption: true,
+app.delete("/cards", (req, res) => {
+  const action = new jsonCards();
+  const card = req.query.cardID;
+  const user = req.query.user?.toString();
+  if (user && card) {
+    action.delete(user, parseInt(card.toString()),(err,data)=>{
+      if (err) {
+        console.log(chalk.red(err));
+        res.send(err);
+      } else {
+        console.log(chalk.green(data));
+        res.send(data);
+      }
+    });
+  } else {
+    res.send("Error user or ID not valid");
+  }
+});
+``` 
+
+> **[Volver al índice](#índice)**
+
+- ### Pruebas con request.
+
+```typescript
+  it('should add a card with bad lore', (done) => {
+    request.post('http://localhost:3000/cards?user=jose', {
+      json: {
+        "user_": "jose",
+        "id_": 0,
+        "name_": "Cazador",
+        "manaCost_": 16,
+        "color_": "multicolor",
+        "typo_": "creature",
+        "rare_": "mythicRare",
+        "rules_": "No puede atacar cuerpo a cuerpo",
+        "value_": 150,
+        "strRes_": 100,
+        "loyalty_": 1000
       },
+    }, (error, response, body) => {
+      expect(response.statusCode).to.equal(200);
+      expect(body).to.equal('Loyalty is only for planeswalker type');
+      done();
+    });
+  });
 ```
 
-  Hay que establecer un campo choices, en vez de type ya que el tipo del dato es una eleccion de un enum.
+Para hacer las pruebas utilizaremos request que recibe como parámetros de una consulta, **el tipo de petición**, **la url base**, **la query string** y **El cuerpo**.
+En `response` se almacenará la respuesta del server y es lo que utilizaremos para comprobar el correcto funcionamiento de este.
 
-- __fs__ Pese a lo clara que es la documentación y lo facil que es de usar nos surgen algunos problemas con respecto a los objetos y la leectura de json, una vez comprendido el funcionamiento de `JSON.stringfy` y de `JSON.parse` fue bastante sencillo trabajar con la API.
 
+> **[Volver al índice](#índice)**
+
+### Modificacion.
+
+En cuanto a la modificación, básicamente fue implementar dos funciones de gestión de cartas magic con la api asícrona y el patrón callback, como hemos hecho en el resto de la practica.
+
+```typescript
+  add(card: magicCard, callback: (
+    err: string | undefined ,data: string | undefined ) => void) {
+        readFile(`${directorioUsuario}/${card.id_}.json`, (err) => {
+          if (err){
+            writeFile(`${directorioUsuario}/${card.id_}.json`, JSON.stringify(card),() => {
+              callback(undefined, 'Card Added')
+            });
+          } else {
+            callback('Card alredy exist', undefined);            
+          }
+        });
+  }
+```
+
+Vemos como se devuelve **Card Added** si la carta se añade y **Card already exist** si ya existe la carta.
 
 > **[Volver al índice](#índice)**
 ## Referencias
 
-[Yargs](https://www.npmjs.com/package/yargs)
-[chalk](https://www.npmjs.com/package/chalk)
-[fs](https://nodejs.org/api/fs.html)
-[SonarCloud](#https://github.com/marketplace/actions/sonarcloud-scan)
+[SonarCloud](#https://sonarcloud.io/project/configuration/GitHubActions?id=ULL-ESIT-INF-DSI-2324_ull-esit-inf-dsi-23-24-prct11-http-express-magic-app-ManuelDavidGomezAlonso)
 [Enunciado de la práctica 11](https://ull-esit-inf-dsi-2324.github.io/prct11-http-express-magic-app/)
 > **[Volver al índice](#índice)**
 ## Anexos

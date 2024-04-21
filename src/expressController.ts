@@ -77,31 +77,33 @@ function jsonRev(str: string) {
 app.get("/cards", (req, res) => {
   const user = new jsonCards();
   if (req.query.user && !req.query.cardID) {
-    user.showAllCards(req.query.user.toString(),(error,data)=>{
+    user.showAllCards(req.query.user.toString(), (error, data) => {
       if (error) {
-          console.log(chalk.red(error));
-          res.send(error);
-      } else if (data){
-        console.log(chalk.green('Showing cards'));
+        console.log(chalk.red(error));
+        res.send(error);
+      } else if (data) {
+        console.log(chalk.green("Showing cards"));
         res.send(data);
       }
     });
   } else if (req.query.user && req.query.cardID) {
     user.showCard(
       req.query.user.toString(),
-      parseInt(req.query.cardID.toString()),(error,data)=>{
+      parseInt(req.query.cardID.toString()),
+      (error, data) => {
         if (error) {
           console.log(chalk.red(error));
           res.send(error);
         } else {
-          console.log(chalk.green('Showing card'));
+          console.log(chalk.green("Showing card"));
           res.send(data);
         }
-      });
-    } else {
-      res.send(`"error": "Error user not valid"`);
-    }
-  });
+      },
+    );
+  } else {
+    res.send(`"error": "Error user not valid"`);
+  }
+});
 
 /**
  * @brief Petición post sobre la api. Creará una carta si se pasa el usuario en la query string, y los datos correctos de la carta, mediante un json en el cuerpo de la petición.
@@ -146,10 +148,9 @@ app.post("/cards", express.json(), (req, res) => {
           console.log(chalk.green(data));
           res.send(data);
         }
-      }
-    );
+      });
     } else {
-      res.send((jsonRev(JSON.stringify(req.body)).error));
+      res.send(jsonRev(JSON.stringify(req.body)).error);
     }
   } else {
     res.send("User must be in query string");
@@ -168,7 +169,7 @@ app.delete("/cards", (req, res) => {
   const card = req.query.cardID;
   const user = req.query.user?.toString();
   if (user && card) {
-    action.delete(user, parseInt(card.toString()),(err,data)=>{
+    action.delete(user, parseInt(card.toString()), (err, data) => {
       if (err) {
         console.log(chalk.red(err));
         res.send(err);
@@ -230,7 +231,7 @@ app.patch("/cards", express.json(), (req, res) => {
           console.log(chalk.green(data));
           res.send(data);
         }
-    });
+      });
     } else {
       res.send(jsonRev(JSON.stringify(req.body)));
     }

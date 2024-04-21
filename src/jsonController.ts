@@ -26,21 +26,26 @@ export class jsonCards {
    * @param card Carta a añadir.
    * @param callback Función de retorno. Campo data y error que devolvera la información según corresponda. (Patrón de diseño).
    */
-  add(card: magicCard, callback: (
-    err: string | undefined ,data: string | undefined ) => void) {
+  add(
+    card: magicCard,
+    callback: (err: string | undefined, data: string | undefined) => void,
+  ) {
     if (!fs.existsSync(`${directorioUsuario}/${card.user_}`)) {
       fs.mkdirSync(`${directorioUsuario}/${card.user_}`);
     }
     readFile(`${directorioUsuario}/${card.user_}/${card.id_}.json`, (err) => {
-      if (err){
-        writeFile(`${directorioUsuario}/${card.user_}/${card.id_}.json`, JSON.stringify(card),() => {
-          callback(undefined, 'Card Added');
-        });
+      if (err) {
+        writeFile(
+          `${directorioUsuario}/${card.user_}/${card.id_}.json`,
+          JSON.stringify(card),
+          () => {
+            callback(undefined, "Card Added");
+          },
+        );
       } else {
-        callback('Card already exists', undefined);            
+        callback("Card already exists", undefined);
       }
     });
-      
   }
 
   /**
@@ -49,15 +54,19 @@ export class jsonCards {
    * @param cardID ID de la carta a eliminar.
    * @param callback Función de retorno. Campo data y error que devolvera la información según corresponda. (Patrón de diseño).
    */
-  delete(user: string, cardID: number, callback: (err: string | undefined , data: string | undefined) => void ){
+  delete(
+    user: string,
+    cardID: number,
+    callback: (err: string | undefined, data: string | undefined) => void,
+  ) {
     const filePath = `${directorioUsuario}/${user}/${cardID}.json`;
     readFile(filePath, (err) => {
-      if (err){
-        callback('Card or user not found', undefined);
+      if (err) {
+        callback("Card or user not found", undefined);
       } else {
         // eliminanndo directorio asincornamente
         fs.unlink(filePath, () => {
-          callback(undefined, 'Card deleted');
+          callback(undefined, "Card deleted");
         });
       }
     });
@@ -69,13 +78,16 @@ export class jsonCards {
    * @param callback Función de retorno. Campo data y error que devolvera la información según corresponda. (Patrón de diseño).
    * @return Devuelve la carta en formato JSON, pero como una cadena.
    */
-  showCard(user:string, showIDCard: number, callback: (
-    err: string | undefined , data: string | undefined ) => void) {
+  showCard(
+    user: string,
+    showIDCard: number,
+    callback: (err: string | undefined, data: string | undefined) => void,
+  ) {
     const filePath = `${directorioUsuario}/${user}/${showIDCard}.json`;
-    readFile(filePath, (err, data) =>{
-      if (err){
-        callback('Card or user not found', undefined);
-      } else if (data){
+    readFile(filePath, (err, data) => {
+      if (err) {
+        callback("Card or user not found", undefined);
+      } else if (data) {
         callback(undefined, data.toString());
       }
     });
@@ -85,17 +97,20 @@ export class jsonCards {
    * @brief Actualiza una carta del directorio del usuario, lo que quiere decir que la carta debe existir.
    * @param card Carta a actualizar.
    */
-  update(card: magicCard, callback: ( err: string | undefined , data: string | undefined ) => void ){
+  update(
+    card: magicCard,
+    callback: (err: string | undefined, data: string | undefined) => void,
+  ) {
     const filePath = `${directorioUsuario}/${card.user_}/${card.id_}.json`;
     readFile(filePath, (err) => {
-      if (err){
-        callback('Card not found', undefined);
+      if (err) {
+        callback("Card not found", undefined);
       } else {
         writeFile(filePath, JSON.stringify(card), () => {
-          callback(undefined, 'Card Updated');
+          callback(undefined, "Card Updated");
         });
       }
-    }); 
+    });
   }
 
   /**
@@ -104,12 +119,15 @@ export class jsonCards {
    * @param callback Función de retorno. Campo data y error que devolvera la información según corresponda. (Patrón de diseño).
    * @return Devuelve un array con todas las cartas del usuario.
    */
-  showAllCards(user: string, callback: (err: string | undefined , data: string[] | undefined ) => void){
+  showAllCards(
+    user: string,
+    callback: (err: string | undefined, data: string[] | undefined) => void,
+  ) {
     const cardsArray: string[] = [];
     const dirPath = `${directorioUsuario}/${user}`;
     fs.readdir(dirPath, (err, files) => {
-      if (err){
-        callback('User not found', undefined);
+      if (err) {
+        callback("User not found", undefined);
       } else {
         files.forEach((file) => {
           fs.readFile(`${dirPath}/${file}`, (err, file) => {
@@ -117,11 +135,9 @@ export class jsonCards {
             if (cardsArray.length === files.length) {
               callback(undefined, cardsArray);
             }
-
           });
-        });    
+        });
       }
     });
-    
   }
 }
