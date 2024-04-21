@@ -152,7 +152,7 @@ describe('Server funcionalities', () => {
     request.get('http://localhost:3000/cards?user=jose', (error, response, body) => {
       expect(response.statusCode).to.equal(200);
       //pone la barra invertida para que no se muestre como un string
-      expect(body).to.equal('["\\"0.json\\""]');
+      expect(body).to.equal('[{"user_":"jose","id_":0,"name_":"Cazador","manaCost_":16,"color_":"multicolor","typo_":"creature","rare_":"mythicRare","rules_":"No puede atacar cuerpo a cuerpo","value_":150,"strRes_":100}]');
       done();
     });
   });
@@ -247,7 +247,7 @@ describe('Server funcionalities', () => {
       
       request.get('http://localhost:3000/cards?user=jose', (error, response, body) => {
         expect(response.statusCode).to.equal(200);
-        expect(body).to.equal(`["\\"1.json\\"","\\"2.json\\""]`);
+        expect(body).to.equal(`[{"user_":"jose","id_":1,"name_":"Cazador","manaCost_":16,"color_":"multicolor","typo_":"creature","rare_":"mythicRare","rules_":"No puede atacar cuerpo a cuerpo","value_":150,"strRes_":100},{"user_":"jose","id_":2,"name_":"Cazador","manaCost_":16,"color_":"multicolor","typo_":"creature","rare_":"mythicRare","rules_":"No puede atacar cuerpo a cuerpo","value_":150,"strRes_":100}]`);
         done();
       });
     });

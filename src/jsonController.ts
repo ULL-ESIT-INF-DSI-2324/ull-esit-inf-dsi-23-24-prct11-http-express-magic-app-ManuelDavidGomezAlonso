@@ -13,7 +13,7 @@ const directorioUsuario = `./src/usuarios/`;
 export class jsonCards {
   /**
    * @brief Constructor de la clase jsonCards.
-   * Se verifica si existe el directorio del usuario, si no existe se crea.
+   * Se verifica si existe el directorio base, si no existe se crea.
    */
   constructor() {
     if (!fs.existsSync(directorioUsuario)) {
@@ -24,6 +24,7 @@ export class jsonCards {
   /**
    * @brief Añade una carta al directorio del usuario.
    * @param card Carta a añadir.
+   * @param callback Función de retorno. Campo data y error que devolvera la información según corresponda. (Patrón de diseño).
    */
   add(card: magicCard, callback: (
     err: string | undefined ,data: string | undefined ) => void) {
@@ -44,7 +45,9 @@ export class jsonCards {
 
   /**
    * @brief Elimina una carta del directorio del usuario.
+   * @param user Usuario al que pertenece la carta.
    * @param cardID ID de la carta a eliminar.
+   * @param callback Función de retorno. Campo data y error que devolvera la información según corresponda. (Patrón de diseño).
    */
   delete(user: string, cardID: number, callback: (err: string | undefined , data: string | undefined) => void ){
     const filePath = `${directorioUsuario}/${user}/${cardID}.json`;
@@ -63,6 +66,8 @@ export class jsonCards {
   /**
    * @brief Muestra una carta del directorio del usuario.
    * @param showIDCard ID de la carta a mostrar.
+   * @param callback Función de retorno. Campo data y error que devolvera la información según corresponda. (Patrón de diseño).
+   * @return Devuelve la carta en formato JSON, pero como una cadena.
    */
   showCard(user:string, showIDCard: number, callback: (
     err: string | undefined , data: string | undefined ) => void) {
@@ -95,7 +100,9 @@ export class jsonCards {
 
   /**
    * @brief Muestra todas las cartas del directorio del usuario.
-   * Se leen todos los archivos del directorio del usuario y se muestran.
+   * @param user Usuario al que pertenecen las cartas.
+   * @param callback Función de retorno. Campo data y error que devolvera la información según corresponda. (Patrón de diseño).
+   * @return Devuelve un array con todas las cartas del usuario.
    */
   showAllCards(user: string, callback: (err: string | undefined , data: string[] | undefined ) => void){
     const cardsArray: string[] = [];
@@ -105,9 +112,14 @@ export class jsonCards {
         callback('User not found', undefined);
       } else {
         files.forEach((file) => {
-          cardsArray.push(JSON.stringify(file));
+          fs.readFile(`${dirPath}/${file}`, (err, file) => {
+            cardsArray.push(JSON.parse(file.toString()));
+            if (cardsArray.length === files.length) {
+              callback(undefined, cardsArray);
+            }
+
+          });
         });    
-        callback(undefined, cardsArray);
       }
     });
     

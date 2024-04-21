@@ -81,9 +81,9 @@ app.get("/cards", (req, res) => {
       if (error) {
           console.log(chalk.red(error));
           res.send(error);
-      } else {
-          console.log(chalk.green('Showing cards'));
-          res.send(data);
+      } else if (data){
+        console.log(chalk.green('Showing cards'));
+        res.send(data);
       }
     });
   } else if (req.query.user && req.query.cardID) {
@@ -102,23 +102,24 @@ app.get("/cards", (req, res) => {
       res.send(`"error": "Error user not valid"`);
     }
   });
+
 /**
  * @brief Petición post sobre la api. Creará una carta si se pasa el usuario en la query string, y los datos correctos de la carta, mediante un json en el cuerpo de la petición.
  * __Ejemplo de petición:__
  * ```json
- * {
- * "user_": "jose",
- * "id_": 0,
- * "name_": "Cazador",
- * "manaCost_": 16,
- * "color_": "multicolor",
- * "typo_": "creature",
- * "rare_": "mythicRare",
- * "rules_": "No puede atacar cuerpo a cuerpo",
- * "value_": 150,
- * "strRes_": 100,
- * "loyalty_": 1000
- * }
+ {
+ "user_":"jose",
+ "id_": 0,
+ "name_": "Cazador",
+ "manaCost_": 16,
+ "color_": "multicolor",
+ "typo_": "creature",
+ "rare_": "mythicRare",
+ "rules_": "No puede atacar cuerpo a cuerpo",
+ "value_": 150,
+ "strRes_": 100
+ }
+ * ```
  */
 app.post("/cards", express.json(), (req, res) => {
   const user = new jsonCards();
@@ -188,18 +189,19 @@ app.delete("/cards", (req, res) => {
  * http://localhost:3000/cards?user=jose&cardID=0
  * ```
  * ```json
- * {
- * "id_": 0,
- * "name_": "Cazador",
- * "manaCost_": 16,
- * "color_": "multicolor",
- * "typo_": "creature",
- * "rare_": "mythicRare",
- * "rules_": "No puede atacar cuerpo a cuerpo",
- * "value_": 150,
- * "strRes_": 100,
- * "loyalty_": 1000
- * }
+ {
+ "user_":"jose",
+ "id_": 0,
+ "name_": "Cazador",
+ "manaCost_": 16,
+ "color_": "multicolor",
+ "typo_": "creature",
+ "rare_": "mythicRare",
+ "rules_": "No puede atacar cuerpo a cuerpo",
+ "value_": 150,
+ "strRes_": 100
+ }
+ * ```
  */
 app.patch("/cards", express.json(), (req, res) => {
   const action = new jsonCards();
@@ -237,6 +239,9 @@ app.patch("/cards", express.json(), (req, res) => {
   }
 });
 
+/**
+ * @brief Petición put sobre la api. Escuchamos sobre el puerto 3000.
+ */
 app.listen(3000, "0.0.0.0", () => {
   chalk.blue(console.log("Server is running on port 3000"));
 });
