@@ -1,164 +1,133 @@
 
 import 'mocha';
-import { expect } from 'chai';
+import { expect, use } from 'chai';
 import { jsonCards } from '../src/jsonController.js';
 import { magicCard, color, tipe, rare} from '../src/magiCard.js';
 import fs from 'fs';
-import chalk from 'chalk';
 
 const directorioUsuario = `./src/usuarios/jose`;
 
-describe('JsonController', () => {
+describe('JsonController pruebas', () => {
 
-  it('should create an instance', () => {
-    expect(new jsonCards()).to.be.an.instanceOf(jsonCards);
+  it('should add a card', (done) => {
+    const card = new magicCard("jose", 0, "Cazador", 16, color.multicolor, tipe.creature, rare.mythicRare, "No puede atacar cuerpo a cuerpo", 150, 100);
+    const user = new jsonCards();
+    user.add(card, (err, data) => {
+      expect(err).to.equal(undefined);
+      expect(data).to.equal('Card Added');
+      done();
+    });
   });
 
-  it('should create a directory usuarios', () => {
-    if (fs.existsSync('./src/usuarios')) {
-      fs.rmdirSync('./src/usuarios', { recursive: true });  
-    }
-    new jsonCards();
-    expect(fs.existsSync('./src/usuarios')).to.be.equal(true);
+  it('should add a card that already exists', (done) => {
+    const card = new magicCard("jose", 0, "Cazador", 16, color.multicolor, tipe.creature, rare.mythicRare, "No puede atacar cuerpo a cuerpo", 150, 100);
+    const user = new jsonCards();
+    user.add(card, (err, data) => {
+      expect(err).to.equal('Card already exists');
+      expect(data).to.equal(undefined);
+      done();
+    });
   });
 
-  it('should add a card to the list', () => {
-    let files;
-    if (!fs.existsSync(directorioUsuario)){
-      files = 0;
-    } else {
-      files = fs.readdirSync(directorioUsuario).length;
-    }
-    const preadd = files;
-    const controller = new jsonCards();
-    const cart = new magicCard('jose',0,'Cazador', 16, color.multicolor, tipe.creature, rare.mythicRare, 'No puede atacar cuerpo a cuerpo', 150, 100, 1000);    
-    if (fs.existsSync(`${directorioUsuario}/0.json`)){
-      expect(fs.existsSync(`${directorioUsuario}/0.json`)).to.be.equal(true);
-    } else {
-    controller.add(cart);
-    const postadd = fs.readdirSync(directorioUsuario).length;
-    expect(postadd).to.be.equal(preadd + 1);
-    }
+  it('should delete a card', (done) => {
+    const user = new jsonCards();
+    user.delete("jose", 0, (err, data) => {
+      expect(err).to.equal(undefined);
+      expect(data).to.equal('Card deleted');
+      done();
+    });
   });
 
-  it('should not add a card already exist', () => {
-    const preadd = fs.readdirSync(directorioUsuario).length;
-    const controller = new jsonCards();
-    const cart = new magicCard('jose',0,'Cazador', 16, color.multicolor, tipe.creature, rare.mythicRare, 'No puede atacar cuerpo a cuerpo', 150, 100, 1000);
-    controller.add(cart);
-    const postadd = fs.readdirSync(directorioUsuario).length;
-    expect(postadd).to.be.equal(preadd);
+  it('should delete a card that does not exist', (done) => {
+    const user = new jsonCards();
+    user.delete("jose", 0, (err, data) => {
+      expect(err).to.equal('Card or user not found');
+      expect(data).to.equal(undefined);
+      done();
+    });
   });
 
-  it('should update a card', () => {
-    const preadd = fs.readdirSync(directorioUsuario).length;
-    const controller = new jsonCards();
-    const newCart = new magicCard('jose',10000,'Jose', 16, color.multicolor, tipe.creature, rare.mythicRare, 'No puede atacar cuerpo a cuerpo', 150, 100, 1000);
-    controller.update(newCart);
-    const postadd = fs.readdirSync(directorioUsuario).length;
-    expect(postadd).to.be.equal(preadd);
+it('should update a card', (done) => {
+    const card = new magicCard("jose", 2, "Cazador", 16, color.multicolor, tipe.creature, rare.mythicRare, "No puede atacar cuerpo a cuerpo", 150, 100);
+    const user = new jsonCards();
+    user.update(card, (err, data) => {
+      expect(err).to.equal(undefined);
+      expect(data).to.equal('Card Updated');
+      done();
+    });
   });
 
-  it('should update a card', () => {
-    const controller = new jsonCards();
-    const newCart = new magicCard('jose', 0, 'Jose', 16, color.multicolor, tipe.creature, rare.mythicRare, 'No puede atacar cuerpo a cuerpo', 150, 100, 1000);
-    if (!fs.existsSync(`${directorioUsuario}/0.json`)){
-      controller.add(newCart);
-    }
-    controller.update(newCart);
-    const cardData = fs.readFileSync(`${directorioUsuario}/0.json`, 'utf-8');
-    const card = JSON.parse(cardData);
-    let modified = true;
-    if (card.name_ === newCart.name_){
-      modified = false;
-    }
-    expect(modified).to.be.equal(true);
+
+  it('should update a card that does not exist', (done) => {  
+    const card = new magicCard("jose", 0, "Cazador", 16, color.multicolor, tipe.creature, rare.mythicRare, "No puede atacar cuerpo a cuerpo", 150, 100);
+    const user = new jsonCards();
+    user.update(card, (err, data) => {
+      expect(err).to.equal('Card not found');
+      expect(data).to.equal(undefined);
+      done();
+    });
   });
 
-  it('should show all cards', () => {
-    const controller = new jsonCards();
-    const cart = new magicCard('jose', 0,'Cazador', 16, color.multicolor, tipe.creature, rare.mythicRare, 'No puede atacar cuerpo a cuerpo', 150, 100, 1000);
-    const cart2 = new magicCard('jose', 2,'Cazador', 16, color.multicolor, tipe.creature, rare.mythicRare, 'No puede atacar cuerpo a cuerpo', 150, 100, 1000);
-    if (
-      !fs.existsSync(`${directorioUsuario}/0.json`)){
-    controller.add(cart);
-      }
-    if ( !fs.existsSync(`${directorioUsuario}/2.json`)){
-    controller.add(cart2);
-    }
-    controller.showAllCards('jose');
-    const files = fs.readdirSync(directorioUsuario);
-    expect(files.length).to.be.equal(2);
+  it('should show a card', (done) => {
+    const user = new jsonCards();
+    user.showCard("jose", 1, (err, data) => {
+      expect(err).to.equal(undefined);
+      expect(data).to.equal('{"user_":"jose","id_":1,"name_":"Cazador","manaCost_":16,"color_":"multicolor","typo_":"creature","rare_":"mythicRare","rules_":"No puede atacar cuerpo a cuerpo","value_":150,"strRes_":100}');
+      done();
+    });
   });
 
-  it('should delete a card', () => {
-    const controller = new jsonCards();
-    const preadd = fs.readdirSync(directorioUsuario).length;
-    controller.delete('jose', 1000);
-    const postadd = fs.readdirSync(directorioUsuario).length;
-    expect(postadd).to.be.equal(preadd);
+  it('should show a card that does not exist', (done) => {
+    const user = new jsonCards();
+    user.showCard("jose", 10, (err, data) => {
+      expect(err).to.equal('Card or user not found');
+      expect(data).to.equal(undefined);
+      done();
+    });
   });
 
-  it('should delete a card', () => {
-    const controller = new jsonCards();
-    const cart = new magicCard('jose',0,'Cazador', 16, color.multicolor, tipe.creature, rare.mythicRare, 'No puede atacar cuerpo a cuerpo', 150, 100, 1000);
-    const cart2 = new magicCard('jose',2,'Cazador', 16, color.multicolor, tipe.creature, rare.mythicRare, 'No puede atacar cuerpo a cuerpo', 150, 100, 1000);
-    if (!fs.existsSync(`${directorioUsuario}/0.json`)){
-      controller.add(cart);
-    }
-    if ( !fs.existsSync(`${directorioUsuario}/2.json`)){
-      controller.add(cart2);
-    }
-    controller.delete('jose', 0);
-    let files
-    if (fs.existsSync(`${directorioUsuario}/0.json`)){
-      files = fs.readdirSync(`${directorioUsuario}/0.json`);
-    } else {
-      files = undefined;
-    }
-    expect(files).to.be.equal(undefined);
+  it('should show all cards of user', (done) => {
+    const user = new jsonCards();
+    user.showAllCards("jose", (err, data) => {
+      expect(err).to.equal(undefined);
+      const size = data?.length
+      expect(size).to.equal(2);
+      done();
+    });
   });
 
-  it('should delete a card', () => {
-    const controller = new jsonCards();
-    const cart = new magicCard('jose', 0,'Cazador', 16, color.multicolor, tipe.creature, rare.mythicRare, 'No puede atacar cuerpo a cuerpo', 150, 100, 1000);
-    if (!fs.existsSync(`${directorioUsuario}/0.json`)){
-      controller.add(cart);
-    }
-    if (fs.existsSync(`${directorioUsuario}/0.json`)){
-      controller.delete('jose',0);
-    }
-    let files
-    if (fs.existsSync(`${directorioUsuario}/0.json`)){
-      files = fs.readdirSync(`${directorioUsuario}/0.json`);
-    } else {
-      files = undefined;
-    }
-    expect(files).to.be.equal(undefined);
+  it ('should show all cards of user that does not exist', (done) => {
+    const user = new jsonCards();
+    user.showAllCards("rafael", (err, data) => {
+      expect(err).to.equal('User not found');
+      expect(data).to.equal(undefined);
+      done();
+    });
   });
 
-  it('should show a card', () => {
-    const controller = new jsonCards();
-    const cart = new magicCard
-    ('jose', 0,'Cazador', 16, color.multicolor, tipe.creature, rare.mythicRare, 'No puede atacar cuerpo a cuerpo', 150, 100, 1000);
-    if (!fs.existsSync(`${directorioUsuario}/0.json`)){
-      controller.add(cart);
-    }
-    controller.showCard('jose', 0);
-    const cardData = fs.readFileSync(`${directorioUsuario}/0.json`, 'utf-8');
-    const card = JSON.parse(cardData);
-    expect(card.name_).to.be.equal(cart.name_);
+  it('Should create a folder for the user using add function', (done) => {
+    const card = new magicCard("luis", 0, "Cazador", 16, color.multicolor, tipe.creature, rare.mythicRare, "No puede atacar cuerpo a cuerpo", 150, 100);
+    const user = new jsonCards();
+    user.add(card, (err, data) => {
+      expect(fs.existsSync('./src/usuarios/luis')).to.equal(true);
+      done();
+    });
   });
 
-  it('should show a card', () => {
-    const controller = new jsonCards();
-    controller.showCard('jose', 1000);
-    expect(!fs.existsSync(`${directorioUsuario}/1000.json`));
+  it('should create a user directory', (done) => {
+    
+    if(fs.existsSync('./src/usuarios')){
+      fs.rmSync('./src/usuarios', { recursive: true });
+    }
+    const user = new jsonCards();
+    expect(fs.existsSync('./src/usuarios')).to.equal(true);
+    done();
   });
 
   after(() => {
-    if (fs.existsSync('./src/usuarios')) {
-      fs.rmdirSync('./src/usuarios', { recursive: true });
+    if(fs.existsSync('./src/usuarios/jose')) {
+      fs.rmdirSync(directorioUsuario, { recursive: true });
     }
+    
   });
 });

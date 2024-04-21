@@ -5,15 +5,13 @@ import { magicCard, color, tipe, rare } from "./magiCard.js";
 
 const app = express();
 
+/**
+ * @brief Función que comprueba si un json es correcto respecto a una carta magic.
+ * @param str Cadena con el json a revisar.
+ * @returns Un json con el error o el json correcto.
+ */
 function jsonRev(str: string) {
-  let json;
-
-  try {
-    json = JSON.parse(str);
-  } catch (error) {
-    return { error: "Invalid JSON format" };
-  }
-
+  const json = JSON.parse(str);
   if (typeof json.user_ !== "string") {
     return { error: "User must be a string" };
   }
@@ -65,66 +63,63 @@ function jsonRev(str: string) {
   return json;
 }
 
-app.get("", (_, res) => {
-  res.send("<h1>My application</h1>");
-});
-
+/**
+ * @brief Petición get sobre la api. Mostrará una carta si se pasa el id en la query string o toda la colección si solmanete se pasa el usuario.
+ * __Ejemplo de petición:__
+ * ```url
+ * http://localhost:3000/cards?user=jose&cardID=0
+ * ```
+ * __Ejemplo de petición:__
+ * ```url
+ * http://localhost:3000/cards?user=jose
+ * ```
+ */
 app.get("/cards", (req, res) => {
   const user = new jsonCards();
   if (req.query.user && !req.query.cardID) {
-    const collection = user.showAllCards(req.query.user.toString());
-    if (collection) {
-      let html = `<h1>Collection of ${req.query.user}</h1>`;
-      collection.forEach((card) => {
-        html += "<br>";
-        html += `<h2>${card.id_}</h2>
-        <p>${card.name_}</p>
-        <p>${card.manaCost_}</p>
-        <p>${card.color_}</p>
-        <p>${card.typo_}</p>
-        <p>${card.rare_}</p>
-        <p>${card.rules_}</p>
-        <p>${card.value_}</p>
-        `;
-        if (card.strRes_) {
-          html += `<p>${card.strRes_}</p>`;
-        }
-        if (card.loyalty_) {
-          html += `<p>${card.loyalty_}</p>`;
+    user.showAllCards(req.query.user.toString(),(error,data)=>{
+      if (error) {
+          console.log(chalk.red(error));
+          res.send(error);
+      } else {
+          console.log(chalk.green('Showing cards'));
+          res.send(data);
+      }
+    });
+  } else if (req.query.user && req.query.cardID) {
+    user.showCard(
+      req.query.user.toString(),
+      parseInt(req.query.cardID.toString()),(error,data)=>{
+        if (error) {
+          console.log(chalk.red(error));
+          res.send(error);
+        } else {
+          console.log(chalk.green('Showing card'));
+          res.send(data);
         }
       });
-      res.send(html);
     } else {
-      res.send("<h1>Error</h1>");
+      res.send(`"error": "Error user not valid"`);
     }
-  } else if (req.query.user && req.query.cardID) {
-    const card = user.showCard(
-      req.query.user.toString(),
-      parseInt(req.query.cardID.toString()),
-    );
-    let html = `<h1>Card ${card.id_} of ${req.query.user}</h1>`;
-    html += "<br>";
-    html += `<h2>${card.id_}</h2>
-        <p>${card.name_}</p>
-        <p>${card.manaCost_}</p>
-        <p>${card.color_}</p>
-        <p>${card.typo_}</p>
-        <p>${card.rare_}</p>
-        <p>${card.rules_}</p>
-        <p>${card.value_}</p>
-        `;
-    if (card.strRes_) {
-      html += `<p>${card.strRes_}</p>`;
-    }
-    if (card.loyalty_) {
-      html += `<p>${card.loyalty_}</p>`;
-    }
-    res.send(html);
-  } else {
-    res.send("<h1>Error</h1>");
-  }
-});
-
+  });
+/**
+ * @brief Petición post sobre la api. Creará una carta si se pasa el usuario en la query string, y los datos correctos de la carta, mediante un json en el cuerpo de la petición.
+ * __Ejemplo de petición:__
+ * ```json
+ * {
+ * "user_": "jose",
+ * "id_": 0,
+ * "name_": "Cazador",
+ * "manaCost_": 16,
+ * "color_": "multicolor",
+ * "typo_": "creature",
+ * "rare_": "mythicRare",
+ * "rules_": "No puede atacar cuerpo a cuerpo",
+ * "value_": 150,
+ * "strRes_": 100,
+ * "loyalty_": 1000
+ * }
+ */
 app.post("/cards", express.json(), (req, res) => {
   const user = new jsonCards();
   if (req.query.user) {
@@ -142,28 +137,70 @@ app.post("/cards", express.json(), (req, res) => {
         req.body.strRes_,
         req.body.loyalty_,
       );
-      user.add(card);
-      res.send("Card created");
+      user.add(card, (err, data) => {
+        if (err) {
+          console.log(chalk.red(err));
+          res.send(err);
+        } else {
+          console.log(chalk.green(data));
+          res.send(data);
+        }
+      }
+    );
     } else {
-      res.send(jsonRev(JSON.stringify(req.body)));
+      res.send((jsonRev(JSON.stringify(req.body)).error));
     }
   } else {
-    res.send("EL user must be in query string");
+    res.send("User must be in query string");
   }
 });
 
+/**
+ * @brief Petición delete sobre la api. Eliminará una carta si se pasa el usuario y el id de la carta en la query string.
+ * __Ejemplo de petición:__
+ * ```url
+ * http://localhost:3000/cards?user=jose&cardID=0
+ * ```
+ */
 app.delete("/cards", (req, res) => {
   const action = new jsonCards();
   const card = req.query.cardID;
   const user = req.query.user?.toString();
   if (user && card) {
-    action.delete(user, parseInt(card.toString()));
-    res.send("Card deleted");
+    action.delete(user, parseInt(card.toString()),(err,data)=>{
+      if (err) {
+        console.log(chalk.red(err));
+        res.send(err);
+      } else {
+        console.log(chalk.green(data));
+        res.send(data);
+      }
+    });
   } else {
     res.send("Error user or ID not valid");
   }
 });
 
+/**
+ * @brief Petición patch sobre la api. Actualizará una carta si se pasa el usuario y el id de la carta en la query string, y los datos correctos de la carta, mediante un json en el cuerpo de la petición.
+ * __Ejemplo de petición:__
+ * ```url
+ * http://localhost:3000/cards?user=jose&cardID=0
+ * ```
+ * ```json
+ * {
+ * "id_": 0,
+ * "name_": "Cazador",
+ * "manaCost_": 16,
+ * "color_": "multicolor",
+ * "typo_": "creature",
+ * "rare_": "mythicRare",
+ * "rules_": "No puede atacar cuerpo a cuerpo",
+ * "value_": 150,
+ * "strRes_": 100,
+ * "loyalty_": 1000
+ * }
+ */
 app.patch("/cards", express.json(), (req, res) => {
   const action = new jsonCards();
   const card = req.query.cardID;
@@ -183,8 +220,15 @@ app.patch("/cards", express.json(), (req, res) => {
         req.body.strRes_,
         req.body.loyalty_,
       );
-      action.update(card);
-      res.send("Card updated");
+      action.update(card, (err, data) => {
+        if (err) {
+          console.log(chalk.red(err));
+          res.send(err);
+        } else {
+          console.log(chalk.green(data));
+          res.send(data);
+        }
+    });
     } else {
       res.send(jsonRev(JSON.stringify(req.body)));
     }
