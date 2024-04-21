@@ -3,7 +3,7 @@ import express from "express";
 import chalk from "chalk";
 import { magicCard, color, tipe, rare } from "./magiCard.js";
 
-const app = express();
+export const app = express();
 
 /**
  * @brief Función que comprueba si un json es correcto respecto a una carta magic.
